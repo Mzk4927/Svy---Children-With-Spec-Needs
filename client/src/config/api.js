@@ -1,4 +1,5 @@
-const rawApiUrl = process.env.REACT_APP_API_URL?.trim();
+const fallbackApiUrl = 'https://svy-children-with-spec-needs-production.up.railway.app/api';
+const rawApiUrl = process.env.REACT_APP_API_URL?.trim() || fallbackApiUrl;
 
 const normalizedOrigin = rawApiUrl
   ? rawApiUrl.replace(/\/+$/, '').replace(/\/api$/i, '')
