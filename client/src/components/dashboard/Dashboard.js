@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react';
-import { Users, BarChart2, PieChart, Wrench } from 'lucide-react';
+import { Users, BarChart2, PieChart, Wrench, Clock, CheckCircle } from 'lucide-react';
 import StatCard from './StatCard';
+import DistrictProfilingWidget from './DistrictProfilingWidget';
+import { getDistrictDistribution } from '../../utils/helpers';
 
 const REQUEST_CATEGORIES = ['Imed Asst Req', 'Medicine Referral', 'Physio Referral'];
 const TOOL_CATEGORIES = [
@@ -51,6 +53,13 @@ export default function Dashboard({ records, onRefresh }) {
     }).filter((tool) => tool.value > 0);
   }, [records]);
 
+  const districtDistribution = useMemo(() => getDistrictDistribution(records), [records]);
+
+  const treatmentStats = useMemo(() => ({
+    pending: records.filter(r => (r.treatmentStatus || 'Pending').toLowerCase() !== 'completed').length,
+    completed: records.filter(r => (r.treatmentStatus || '').toLowerCase() === 'completed').length
+  }), [records]);
+
   return (
     <div className="space-y-7">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -61,14 +70,16 @@ export default function Dashboard({ records, onRefresh }) {
         <button onClick={onRefresh} className="px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300">Refresh Data</button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5">
         <StatCard title="Total Children" value={localStats.total || 0} icon={<Users className="text-blue-600" />} color="bg-blue-50" />
         <StatCard title="Ages 0-5" value={localStats.ageGroups?.['0-5'] || 0} icon={<Users className="text-emerald-600" />} color="bg-emerald-50" />
         <StatCard title="Ages 6-15" value={(localStats.ageGroups?.['6-10'] || 0) + (localStats.ageGroups?.['11-15'] || 0)} icon={<Users className="text-amber-600" />} color="bg-amber-50" />
         <StatCard title="Ages 15+" value={localStats.ageGroups?.['15+'] || 0} icon={<Users className="text-purple-600" />} color="bg-purple-50" />
+        <StatCard title="Treatment Pending" value={treatmentStats.pending} icon={<Clock className="text-amber-600" />} color="bg-amber-50" />
+        <StatCard title="Treatment Done" value={treatmentStats.completed} icon={<CheckCircle className="text-emerald-600" />} color="bg-emerald-50" />
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
           <div className="flex items-center gap-2 mb-6">
             <Wrench className="text-indigo-600" />
@@ -92,6 +103,8 @@ export default function Dashboard({ records, onRefresh }) {
             )}
           </div>
         </div>
+
+        <DistrictProfilingWidget districtData={districtDistribution} totalRecords={localStats.total} />
 
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
           <div className="flex items-center gap-2 mb-6">

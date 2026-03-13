@@ -82,13 +82,32 @@ export function RecordsProvider({ children }) {
   };
 
   const updateRecord = async (id, recordData) => {
-    const updated = await api.updateRecord(id, recordData);
+    const previousRecord = records.find((record) => record.id === id);
+
     setRecords((current) => {
-      const next = current.map((record) => (record.id === id ? updated : record));
+      const next = current.map((record) => (record.id === id ? { ...record, ...recordData } : record));
       localStorage.setItem(RECORDS_CACHE_KEY, JSON.stringify(next));
       return next;
     });
-    return updated;
+
+    try {
+      const updated = await api.updateRecord(id, recordData);
+      setRecords((current) => {
+        const next = current.map((record) => (record.id === id ? updated : record));
+        localStorage.setItem(RECORDS_CACHE_KEY, JSON.stringify(next));
+        return next;
+      });
+      return updated;
+    } catch (error) {
+      if (previousRecord) {
+        setRecords((current) => {
+          const next = current.map((record) => (record.id === id ? previousRecord : record));
+          localStorage.setItem(RECORDS_CACHE_KEY, JSON.stringify(next));
+          return next;
+        });
+      }
+      throw error;
+    }
   };
 
   const deleteRecord = async (id) => {

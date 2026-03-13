@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { FileText, Search, Printer, Edit, Trash2, FileBadge, MessageSquare } from 'lucide-react';
+import { FileText, Search, Printer, Edit, Trash2, FileBadge, MessageSquare, Check, RotateCcw } from 'lucide-react';
 import FilterButton from './filterbutton';
 import SingleReportView from './SingleReportView';
 import api from '../../services/api';
@@ -16,6 +16,7 @@ export default function RecordsPortal({ records, user, onUpdate, onDelete, onRef
   const [reviewComment, setReviewComment] = useState('');
   const [reviewRating, setReviewRating] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [statusUpdatingId, setStatusUpdatingId] = useState(null);
   const [categories, setCategories] = useState([]);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [categoryError, setCategoryError] = useState('');
@@ -155,6 +156,25 @@ export default function RecordsPortal({ records, user, onUpdate, onDelete, onRef
     }
   };
 
+  const getTreatmentStatus = (record) => {
+    return (record.treatmentStatus || 'Pending').toLowerCase() === 'completed' ? 'Completed' : 'Pending';
+  };
+
+  const toggleTreatmentStatus = async (record) => {
+    const recordId = record.id || record._id;
+    if (!recordId) return;
+    const nextStatus = getTreatmentStatus(record) === 'Completed' ? 'Pending' : 'Completed';
+
+    setStatusUpdatingId(recordId);
+    try {
+      await onUpdate(recordId, { treatmentStatus: nextStatus });
+    } catch {
+      // Global app error banner already handles message display.
+    } finally {
+      setStatusUpdatingId(null);
+    }
+  };
+
   if (singleReport) {
     return <SingleReportView record={singleReport} onClose={() => setSingleReport(null)} />;
   }
@@ -202,6 +222,7 @@ export default function RecordsPortal({ records, user, onUpdate, onDelete, onRef
                   <th className="px-6 py-4 font-semibold">Contact & Address</th>
                   <th className="px-6 py-4 font-semibold">Diagnosis</th>
                   <th className="px-6 py-4 font-semibold">Advice</th>
+                  <th className="px-6 py-4 font-semibold">Status</th>
                   <th className="px-6 py-4 font-semibold text-right">Actions</th>
                 </tr>
               </thead>
@@ -209,7 +230,7 @@ export default function RecordsPortal({ records, user, onUpdate, onDelete, onRef
                 {filteredRecords.map(record => (
                   <tr key={record._id || record.id} className="hover:bg-slate-50 transition">
                     {editingId === (record._id || record.id) ? (
-                      <td colSpan={5} className="p-4 bg-blue-50">
+                      <td colSpan={6} className="p-4 bg-blue-50">
                         <form onSubmit={(e) => saveEdit(e, record._id || record.id)} className="grid grid-cols-2 gap-4">
                           <input name="name" defaultValue={record.name} className="p-2 border rounded" required />
                           <input name="fatherName" defaultValue={record.fatherName} className="p-2 border rounded" />
@@ -243,12 +264,35 @@ export default function RecordsPortal({ records, user, onUpdate, onDelete, onRef
                           {record.remarks && <span className="text-xs text-slate-400 italic mt-1 block max-w-[200px]">{record.remarks}</span>}
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-600 max-w-[200px]">{record.advice}</td>
+                        <td className="px-6 py-4">
+                          {getTreatmentStatus(record) === 'Completed' ? (
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200">
+                              Treatment Done
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+                              Pending
+                            </span>
+                          )}
+                        </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex justify-end gap-2">
                             <button onClick={() => setSingleReport(record)} className="p-2 text-slate-500 hover:text-blue-700 hover:bg-blue-100 rounded-full transition" title="View Report"><FileBadge size={18} /></button>
                             <button onClick={() => openReviewsModal(record)} className="p-2 text-slate-500 hover:text-emerald-700 hover:bg-emerald-100 rounded-full transition" title="Comment / Review"><MessageSquare size={18} /></button>
                             {user?.role === 'admin' && (
                               <>
+                                <button
+                                  onClick={() => toggleTreatmentStatus(record)}
+                                  disabled={statusUpdatingId === (record.id || record._id)}
+                                  className={`p-2 rounded-full transition ${
+                                    getTreatmentStatus(record) === 'Completed'
+                                      ? 'text-emerald-600 hover:text-amber-700 hover:bg-amber-100'
+                                      : 'text-slate-500 hover:text-emerald-700 hover:bg-emerald-100'
+                                  } disabled:opacity-50`}
+                                  title={getTreatmentStatus(record) === 'Completed' ? 'Revert to Pending' : 'Mark as Done'}
+                                >
+                                  {getTreatmentStatus(record) === 'Completed' ? <RotateCcw size={18} /> : <Check size={18} />}
+                                </button>
                                 <button onClick={() => setEditingId(record._id || record.id)} className="p-2 text-slate-500 hover:text-amber-600 hover:bg-amber-100 rounded-full transition" title="Edit"><Edit size={18} /></button>
                                 <button onClick={() => onDelete(record._id || record.id)} className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-100 rounded-full transition" title="Delete"><Trash2 size={18} /></button>
                               </>

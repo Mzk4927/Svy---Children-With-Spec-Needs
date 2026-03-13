@@ -69,6 +69,7 @@ export default function App() {
       await updateRecord(id, recordData);
     } catch (err) {
       setError('Failed to update record: ' + err.message);
+      throw err;
     }
   };
 

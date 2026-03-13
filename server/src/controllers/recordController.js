@@ -56,6 +56,8 @@ exports.create = async (req, res, next) => {
       data: {
         name: req.body.name,
         fatherName: req.body.fatherName,
+        district: req.body.district || 'Unknown',
+        treatmentStatus: req.body.treatmentStatus || 'Pending',
         address: req.body.address,
         contact: req.body.contact,
         age: Number(req.body.age),
@@ -103,6 +105,8 @@ exports.update = async (req, res, next) => {
       data: {
         name: req.body.name ?? existingRecord.name,
         fatherName: req.body.fatherName ?? existingRecord.fatherName,
+        district: req.body.district ?? existingRecord.district,
+        treatmentStatus: req.body.treatmentStatus ?? existingRecord.treatmentStatus,
         address: req.body.address ?? existingRecord.address,
         contact: req.body.contact ?? existingRecord.contact,
         age: req.body.age !== undefined ? Number(req.body.age) : existingRecord.age,
@@ -175,6 +179,7 @@ exports.search = async (req, res, next) => {
         OR: [
           { name: { contains: q, mode: 'insensitive' } },
           { fatherName: { contains: q, mode: 'insensitive' } },
+          { district: { contains: q, mode: 'insensitive' } },
           { address: { contains: q, mode: 'insensitive' } }
         ]
       },

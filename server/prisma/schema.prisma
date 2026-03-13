@@ -37,6 +37,8 @@ model Record {
   id              Int          @id @default(autoincrement())
   name            String
   fatherName      String
+  district        String       @default("Unknown")
+  treatmentStatus String       @default("Pending")
   address         String
   contact         String
   age             Int

@@ -135,6 +135,10 @@ class ApiService {
     return data;
   }
 
+  async updateTreatmentStatus(id, treatmentStatus) {
+    return this.updateRecord(id, { treatmentStatus });
+  }
+
   async deleteRecord(id) {
     const response = await fetch(`${API_URL}/records/${id}`, {
       method: 'DELETE',

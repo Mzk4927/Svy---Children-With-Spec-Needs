@@ -18,6 +18,7 @@ const validateLogin = [
 const validateRecord = [
   body('name').notEmpty().withMessage('Child name is required'),
   body('fatherName').notEmpty().withMessage('Father name is required'),
+  body('district').notEmpty().withMessage('District is required'),
   body('age').isInt({ min: 0, max: 120 }).withMessage('Age must be a number between 0 and 120'),
   body('contact').optional().matches(/^[0-9+\-\s]{10,15}$/).withMessage('Invalid contact number'),
   body('disability').optional(),

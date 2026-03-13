@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { PlusCircle, Save, X, Upload, Image as ImageIcon } from 'lucide-react';
 import api from '../../services/api';
+import { KPK_DISTRICTS } from '../../utils/constants';
 
 export default function NewEvaluation({ onSubmit, onCancel, user }) {
   const [formData, setFormData] = useState({
-    name: '', fatherName: '', address: '', contact: '', age: '', disability: '', advice: '', remarks: '', image: null, imageUrl: null
+    name: '', fatherName: '', district: '', address: '', contact: '', age: '', disability: '', advice: '', remarks: '', image: null, imageUrl: null
   });
   const [uploading, setUploading] = useState(false);
   const [categories, setCategories] = useState([]);
@@ -75,9 +76,9 @@ export default function NewEvaluation({ onSubmit, onCancel, user }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.age) return;
+    if (!formData.name || !formData.age || !formData.district) return;
     onSubmit({
-      name: formData.name, fatherName: formData.fatherName, address: formData.address,
+      name: formData.name, fatherName: formData.fatherName, district: formData.district, address: formData.address,
       contact: formData.contact, age: parseInt(formData.age), disability: formData.disability,
       advice: formData.advice, remarks: formData.remarks, imageUrl: formData.imageUrl,
       tags: selectedCategories
@@ -91,6 +92,21 @@ export default function NewEvaluation({ onSubmit, onCancel, user }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <InputGroup label="Child Name" name="name" value={formData.name} onChange={handleChange} required />
           <InputGroup label="Father Name" name="fatherName" value={formData.fatherName} onChange={handleChange} required />
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">District <span className="text-red-500">*</span></label>
+            <select
+              name="district"
+              value={formData.district}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
+            >
+              <option value="">Select district</option>
+              {KPK_DISTRICTS.map((district) => (
+                <option key={district} value={district}>{district}</option>
+              ))}
+            </select>
+          </div>
           <InputGroup label="Age (Years)" name="age" type="number" value={formData.age} onChange={handleChange} required />
           <InputGroup label="Contact No" name="contact" value={formData.contact} onChange={handleChange} />
           <div className="md:col-span-2"><InputGroup label="Address" name="address" value={formData.address} onChange={handleChange} /></div>
