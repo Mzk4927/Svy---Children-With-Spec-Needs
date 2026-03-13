@@ -9,6 +9,7 @@ const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
 const prisma = require('./config/database');
+const { corsOptions, socketCorsOptions } = require('./config/cors');
 
 const authRoutes = require('./routes/authRoutes');
 const recordRoutes = require('./routes/recordRoutes');
@@ -20,10 +21,7 @@ const errorHandler = require('./middleware/errorHandler');
 const app = express();
 const server = http.createServer(app);
 const io = socketIO(server, {
-  cors: {
-    origin: process.env.CLIENT_URL,
-    credentials: true
-  }
+  cors: socketCorsOptions
 });
 
 // Middleware
@@ -31,10 +29,7 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 app.use(compression());
-app.use(cors({
-  origin: process.env.CLIENT_URL,
-  credentials: true
-}));
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.get('/uploads/:filename', (req, res, next) => {
@@ -116,7 +111,7 @@ app.use('/api/categories', categoryRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date() });
+  res.json({ status: 'OK', timestamp: new Date(), corsConfigured: Boolean(process.env.CLIENT_URL) });
 });
 
 // Error handler

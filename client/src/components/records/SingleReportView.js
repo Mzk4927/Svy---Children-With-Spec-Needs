@@ -1,8 +1,6 @@
 import React from 'react';
 import { FileBadge, Activity, Users, Printer, X } from 'lucide-react';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-const API_ORIGIN = API_URL.replace(/\/api\/?$/, '');
+import { API_ORIGIN } from '../../config/api';
 
 const getImageSrc = (imageUrl) => {
   if (!imageUrl) return null;

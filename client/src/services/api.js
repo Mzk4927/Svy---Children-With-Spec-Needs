@@ -1,4 +1,4 @@
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+import { API_BASE_URL } from '../config/api';
 
 class ApiService {
   constructor() {
@@ -53,7 +53,7 @@ class ApiService {
 
   async refreshAccessToken() {
     try {
-      const response = await fetch(`${API_URL}/auth/refresh`, {
+      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken: this.refreshToken }),
@@ -70,7 +70,7 @@ class ApiService {
   }
 
   async login(email, password) {
-    const response = await fetch(`${API_URL}/auth/login`, {
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
@@ -82,7 +82,7 @@ class ApiService {
   }
 
   async register(userData) {
-    const response = await fetch(`${API_URL}/auth/register`, {
+    const response = await fetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(userData),
@@ -96,7 +96,7 @@ class ApiService {
 
   async getRecords(params = {}) {
     const query = new URLSearchParams(params).toString();
-    const response = await fetch(`${API_URL}/records${query ? '?' + query : ''}`, {
+    const response = await fetch(`${API_BASE_URL}/records${query ? '?' + query : ''}`, {
       headers: this.getHeaders(),
     });
     const data = await this.handleResponse(response);
@@ -105,7 +105,7 @@ class ApiService {
   }
 
   async getRecordById(id) {
-    const response = await fetch(`${API_URL}/records/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/records/${id}`, {
       headers: this.getHeaders(),
     });
     const data = await this.handleResponse(response);
@@ -114,7 +114,7 @@ class ApiService {
   }
 
   async createRecord(recordData) {
-    const response = await fetch(`${API_URL}/records`, {
+    const response = await fetch(`${API_BASE_URL}/records`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(recordData),
@@ -125,7 +125,7 @@ class ApiService {
   }
 
   async updateRecord(id, recordData) {
-    const response = await fetch(`${API_URL}/records/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/records/${id}`, {
       method: 'PUT',
       headers: this.getHeaders(),
       body: JSON.stringify(recordData),
@@ -140,7 +140,7 @@ class ApiService {
   }
 
   async deleteRecord(id) {
-    const response = await fetch(`${API_URL}/records/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/records/${id}`, {
       method: 'DELETE',
       headers: this.getHeaders(),
     });
@@ -150,7 +150,7 @@ class ApiService {
   }
 
   async searchRecords(query) {
-    const response = await fetch(`${API_URL}/records/search?q=${encodeURIComponent(query)}`, {
+    const response = await fetch(`${API_BASE_URL}/records/search?q=${encodeURIComponent(query)}`, {
       headers: this.getHeaders(),
     });
     const data = await this.handleResponse(response);
@@ -159,7 +159,7 @@ class ApiService {
   }
 
   async getStatistics() {
-    const response = await fetch(`${API_URL}/stats`, {
+    const response = await fetch(`${API_BASE_URL}/stats`, {
       headers: this.getHeaders(),
     });
     const data = await this.handleResponse(response);
@@ -168,7 +168,7 @@ class ApiService {
   }
 
   async getCategories() {
-    const response = await fetch(`${API_URL}/categories`, {
+    const response = await fetch(`${API_BASE_URL}/categories`, {
       headers: this.getHeaders(),
     });
     const data = await this.handleResponse(response);
@@ -177,7 +177,7 @@ class ApiService {
   }
 
   async createCategory(payload) {
-    const response = await fetch(`${API_URL}/categories`, {
+    const response = await fetch(`${API_BASE_URL}/categories`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(payload),
@@ -188,7 +188,7 @@ class ApiService {
   }
 
   async getRecordReviews(recordId) {
-    const response = await fetch(`${API_URL}/records/${recordId}/reviews`, {
+    const response = await fetch(`${API_BASE_URL}/records/${recordId}/reviews`, {
       headers: this.getHeaders(),
     });
     const data = await this.handleResponse(response);
@@ -197,7 +197,7 @@ class ApiService {
   }
 
   async addRecordReview(recordId, payload) {
-    const response = await fetch(`${API_URL}/records/${recordId}/reviews`, {
+    const response = await fetch(`${API_BASE_URL}/records/${recordId}/reviews`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(payload),
@@ -210,7 +210,7 @@ class ApiService {
   async uploadImage(file) {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await fetch(`${API_URL}/upload/image`, {
+    const response = await fetch(`${API_BASE_URL}/upload/image`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${this.token}` },
       body: formData,
@@ -221,4 +221,6 @@ class ApiService {
   }
 }
 
-export default new ApiService();
+const apiService = new ApiService();
+
+export default apiService;
