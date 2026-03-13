@@ -1,6 +1,9 @@
 const prisma = require('../config/database');
 
 const DEFAULT_CATEGORIES = [
+  'Imed Asst Req',
+  'Medicine Referral',
+  'Physio Referral',
   'Wheelchair',
   'Crutches',
   'Walker (Walking Frame)',

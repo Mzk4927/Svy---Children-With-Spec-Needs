@@ -56,7 +56,11 @@ export default function NewEvaluation({ onSubmit, onCancel, user }) {
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { alert("File too large. Max 5MB."); return; }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File too large. Max 5MB.');
+      return;
+    }
+
     setUploading(true);
     try {
       const result = await api.uploadImage(file);
@@ -144,18 +148,31 @@ export default function NewEvaluation({ onSubmit, onCancel, user }) {
 
             <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-xl p-4 bg-slate-50">
               {uploading ? (
-                <div className="text-center p-6"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div><p className="text-sm text-slate-600">Uploading...</p></div>
+                <div className="text-center p-6">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <p className="text-sm text-slate-600">Uploading...</p>
+                </div>
               ) : formData.image ? (
                 <div className="relative w-full h-48 mb-4">
                   <img src={formData.image} alt="Preview" className="w-full h-full object-cover rounded-lg" />
-                  <button type="button" onClick={() => setFormData({...formData, image: null, imageUrl: null})} className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"><X size={16} /></button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, image: null, imageUrl: null })}
+                    className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+                  >
+                    <X size={16} />
+                  </button>
                 </div>
               ) : (
-                <div className="text-center p-6 text-slate-400"><ImageIcon size={48} className="mx-auto mb-2" /><p className="text-sm">No photo selected</p></div>
+                <div className="text-center p-6 text-slate-400">
+                  <ImageIcon size={48} className="mx-auto mb-2" />
+                  <p className="text-sm">No photo selected</p>
+                </div>
               )}
+
               <label className="cursor-pointer w-full">
                 <span className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition font-medium">
-                  <Upload size={18} /> {formData.image ? "Change Photo" : "Upload Photo"}
+                  <Upload size={18} /> {formData.image ? 'Change Photo' : 'Upload Photo'}
                 </span>
                 <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={uploading} />
               </label>

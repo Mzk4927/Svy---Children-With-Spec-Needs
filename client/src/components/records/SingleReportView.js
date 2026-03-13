@@ -1,7 +1,19 @@
 import React from 'react';
 import { FileBadge, Activity, Users, Printer, X } from 'lucide-react';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_ORIGIN = API_URL.replace(/\/api\/?$/, '');
+
+const getImageSrc = (imageUrl) => {
+  if (!imageUrl) return null;
+  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) return imageUrl;
+  if (imageUrl.startsWith('/')) return `${API_ORIGIN}${imageUrl}`;
+  return `${API_ORIGIN}/${imageUrl}`;
+};
+
 export default function SingleReportView({ record, onClose }) {
+  const imageSrc = getImageSrc(record.imageUrl);
+
   return (
     <div className="fixed inset-0 z-50 bg-white overflow-y-auto">
       <div className="fixed top-0 left-0 right-0 bg-slate-800 p-4 flex justify-between items-center print:hidden shadow-lg">
@@ -16,7 +28,7 @@ export default function SingleReportView({ record, onClose }) {
         <div className="text-center border-b-2 border-slate-800 pb-8 mb-8">
           <div className="flex justify-center mb-4"><Activity className="w-16 h-16 text-slate-800" /></div>
           <h1 className="text-4xl font-extrabold text-slate-900 uppercase tracking-widest mb-2">Medical Evaluation Report</h1>
-          <p className="text-lg text-slate-600 font-serif italic">Special Needs Assessment Camp • BHU Nazarabad</p>
+          <p className="text-lg text-slate-600 font-serif italic">Special Needs Assessment Camp</p>
           <p className="text-sm text-slate-500 mt-2">Date: {new Date().toLocaleDateString()}</p>
         </div>
 
@@ -32,7 +44,11 @@ export default function SingleReportView({ record, onClose }) {
             </div>
           </div>
           <div className="w-48 h-48 flex-shrink-0 mx-auto md:mx-0 border-4 border-slate-200 shadow-sm bg-slate-100 flex items-center justify-center overflow-hidden rounded-lg">
-            {record.imageUrl ? <img src={record.imageUrl} alt="Patient" className="w-full h-full object-cover" /> : <div className="text-slate-300 flex flex-col items-center"><Users size={48} /><span className="text-xs uppercase mt-2 font-bold">No Photo</span></div>}
+            {imageSrc ? (
+              <img src={imageSrc} alt="Patient" className="w-full h-full object-cover" />
+            ) : (
+              <div className="text-slate-300 flex flex-col items-center"><Users size={48} /><span className="text-xs uppercase mt-2 font-bold">No Photo</span></div>
+            )}
           </div>
         </div>
 

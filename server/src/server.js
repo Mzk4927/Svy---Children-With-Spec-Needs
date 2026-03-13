@@ -5,6 +5,8 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const socketIO = require('socket.io');
 const http = require('http');
+const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 const prisma = require('./config/database');
 
@@ -25,7 +27,9 @@ const io = socketIO(server, {
 });
 
 // Middleware
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
 app.use(compression());
 app.use(cors({
   origin: process.env.CLIENT_URL,
@@ -33,6 +37,47 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.get('/uploads/:filename', (req, res, next) => {
+  const filePath = path.join(__dirname, '..', 'uploads', req.params.filename);
+
+  fs.readFile(filePath, (err, data) => {
+    if (err) return next();
+
+    const ext = path.extname(filePath).toLowerCase();
+    if (ext === '.jpg' || ext === '.jpeg' || ext === '.jfif') {
+      res.type('image/jpeg');
+    } else if (ext === '.png') {
+      res.type('image/png');
+    } else if (ext === '.gif') {
+      res.type('image/gif');
+    } else {
+      // Handle legacy files saved without extension by sniffing magic bytes.
+      if (data.length >= 4 && data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff) {
+        res.type('image/jpeg');
+      } else if (data.length >= 8 && data[0] === 0x89 && data[1] === 0x50 && data[2] === 0x4e && data[3] === 0x47) {
+        res.type('image/png');
+      } else if (data.length >= 4 && data[0] === 0x47 && data[1] === 0x49 && data[2] === 0x46 && data[3] === 0x38) {
+        res.type('image/gif');
+      }
+    }
+
+    res.sendFile(filePath);
+  });
+});
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads'), {
+  setHeaders: (res, filePath) => {
+    const ext = path.extname(filePath).toLowerCase();
+    if (ext === '.jpg' || ext === '.jpeg' || ext === '.jfif') {
+      res.setHeader('Content-Type', 'image/jpeg');
+    }
+    if (ext === '.png') {
+      res.setHeader('Content-Type', 'image/png');
+    }
+    if (ext === '.gif') {
+      res.setHeader('Content-Type', 'image/gif');
+    }
+  }
+}));
 
 // Rate limiting
 const limiter = rateLimit({

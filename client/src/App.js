@@ -1,19 +1,35 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import LoginScreen from './components/auth/LoginScreen';
 import Sidebar from './components/layout/Sidebar';
 import Dashboard from './components/dashboard/Dashboard';
 import RecordsPortal from './components/records/RecordsPortal';
 import NewEvaluation from './components/records/NewEvaluation';
 import api from './services/api';
+import { useRecords } from './context/RecordsContext';
 import './App.css';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [records, setRecords] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const {
+    records,
+    loading,
+    refreshRecords,
+    clearRecords,
+    createRecord,
+    updateRecord,
+    deleteRecord
+  } = useRecords();
+
+  const fetchRecords = useCallback(async () => {
+    try {
+      await refreshRecords();
+    } catch (err) {
+      setError(err.message);
+    }
+  }, [refreshRecords]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -23,19 +39,7 @@ export default function App() {
       setIsAuthenticated(true);
       fetchRecords();
     }
-  }, []);
-
-  const fetchRecords = async () => {
-    setLoading(true);
-    try {
-      const data = await api.getRecords();
-      setRecords(data.data || data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [fetchRecords]);
 
   const handleLogin = (userData) => {
     setUser(userData);
@@ -48,13 +52,12 @@ export default function App() {
     await api.logout();
     setIsAuthenticated(false);
     setUser(null);
-    setRecords([]);
+    clearRecords();
   };
 
   const handleCreateRecord = async (recordData) => {
     try {
-      const newRecord = await api.createRecord(recordData);
-      setRecords([newRecord, ...records]);
+      await createRecord(recordData);
       setActiveTab('records');
     } catch (err) {
       setError('Failed to create record: ' + err.message);
@@ -63,8 +66,7 @@ export default function App() {
 
   const handleUpdateRecord = async (id, recordData) => {
     try {
-      const updated = await api.updateRecord(id, recordData);
-      setRecords(records.map(r => (r.id === id ? updated : r)));
+      await updateRecord(id, recordData);
     } catch (err) {
       setError('Failed to update record: ' + err.message);
     }
@@ -73,8 +75,7 @@ export default function App() {
   const handleDeleteRecord = async (id) => {
     if (!window.confirm('Are you sure you want to delete this record?')) return;
     try {
-      await api.deleteRecord(id);
-      setRecords(records.filter(r => r.id !== id));
+      await deleteRecord(id);
     } catch (err) {
       setError('Failed to delete record: ' + err.message);
     }

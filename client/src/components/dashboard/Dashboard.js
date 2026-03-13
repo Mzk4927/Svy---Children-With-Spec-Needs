@@ -1,30 +1,20 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Users, BarChart2, PieChart } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { Users, BarChart2, PieChart, Wrench } from 'lucide-react';
 import StatCard from './StatCard';
-import api from '../../services/api';
 
-export default function Dashboard({ records, user, onRefresh }) {
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(false);
+const REQUEST_CATEGORIES = ['Imed Asst Req', 'Medicine Referral', 'Physio Referral'];
+const TOOL_CATEGORIES = [
+  'Wheelchair',
+  'Crutches',
+  'Walker (Walking Frame)',
+  'Walking Cane',
+  'Prosthetic Leg (Artificial Leg)',
+  'Prosthetic Arm (Artificial Arm)',
+  'Hearing Aid'
+];
 
-  useEffect(() => {
-    fetchStatistics();
-  }, []);
-
-  const fetchStatistics = async () => {
-    setLoading(true);
-    try {
-      const data = await api.getStatistics();
-      setStats(data);
-    } catch (error) {
-      console.error('Failed to fetch stats:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+export default function Dashboard({ records, onRefresh }) {
   const localStats = useMemo(() => {
-    if (stats) return stats;
     return {
       total: records.length,
       ageGroups: {
@@ -34,44 +24,83 @@ export default function Dashboard({ records, user, onRefresh }) {
         '15+': records.filter(r => r.age > 15).length
       }
     };
-  }, [records, stats]);
+  }, [records]);
 
-  const disabilityData = useMemo(() => {
-    const counts = {};
-    records.forEach(r => {
-      const type = r.disability ? r.disability.split(/[/(,]/)[0].trim() : "Other";
-      counts[type] = (counts[type] || 0) + 1;
+  const requestDistribution = useMemo(() => {
+    return REQUEST_CATEGORIES.map((categoryName) => {
+      const children = records
+        .filter((record) => (record.tags || []).includes(categoryName))
+        .map((record) => record.name);
+
+      return {
+        name: categoryName,
+        children,
+        value: children.length
+      };
     });
-    return Object.entries(counts).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+  }, [records]);
+
+  const toolDistribution = useMemo(() => {
+    return TOOL_CATEGORIES.map((toolName) => {
+      const assignedChildren = records.filter((record) => (record.tags || []).includes(toolName));
+      return {
+        name: toolName,
+        value: assignedChildren.length,
+        children: assignedChildren.map((record) => record.name)
+      };
+    }).filter((tool) => tool.value > 0);
   }, [records]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-7">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Dashboard Overview</h2>
+          <h2 className="text-4xl font-black text-slate-800 tracking-tight">Dashboard Overview</h2>
           <span className="text-sm text-slate-500">Last updated: {new Date().toLocaleString()}</span>
         </div>
-        <button onClick={onRefresh} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Refresh Data</button>
+        <button onClick={onRefresh} className="px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-300">Refresh Data</button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard title="Total Children" value={localStats.total || 0} icon={<Users className="text-blue-600" />} color="bg-blue-50" />
         <StatCard title="Ages 0-5" value={localStats.ageGroups?.['0-5'] || 0} icon={<Users className="text-emerald-600" />} color="bg-emerald-50" />
         <StatCard title="Ages 6-15" value={(localStats.ageGroups?.['6-10'] || 0) + (localStats.ageGroups?.['11-15'] || 0)} icon={<Users className="text-amber-600" />} color="bg-amber-50" />
         <StatCard title="Ages 15+" value={localStats.ageGroups?.['15+'] || 0} icon={<Users className="text-purple-600" />} color="bg-purple-50" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Disability Distribution */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <div className="flex items-center gap-2 mb-6">
+            <Wrench className="text-indigo-600" />
+            <h3 className="font-bold text-lg text-slate-700">Equipment / Tool Distribution</h3>
+          </div>
+          <div className="space-y-4">
+            {toolDistribution.length === 0 ? (
+              <div className="text-sm text-slate-500">No tools assigned yet.</div>
+            ) : (
+              toolDistribution.map((item) => (
+                <div key={item.name} className="relative bg-slate-50 border border-slate-100 rounded-lg p-3">
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="font-medium text-slate-700">{item.name}</span>
+                    <span className="text-slate-500">{item.value} children</span>
+                  </div>
+                  <div className="w-full bg-slate-200 rounded-full h-2.5">
+                    <div className="bg-indigo-500 h-2.5 rounded-full" style={{ width: `${(item.value / (localStats.total || 1)) * 100}%` }}></div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
           <div className="flex items-center gap-2 mb-6">
             <BarChart2 className="text-blue-600" />
-            <h3 className="font-bold text-lg text-slate-700">Disease / Disability Distribution</h3>
+            <h3 className="font-bold text-lg text-slate-700">Imed Asst Req / Referral Distribution</h3>
           </div>
-          <div className="space-y-3">
-            {disabilityData.slice(0, 6).map((item, idx) => (
-              <div key={idx} className="relative">
+          <div className="space-y-4">
+            {requestDistribution.map((item) => (
+              <div key={item.name} className="relative bg-slate-50 border border-slate-100 rounded-lg p-3">
                 <div className="flex justify-between text-sm mb-1">
                   <span className="font-medium text-slate-700">{item.name}</span>
                   <span className="text-slate-500">{item.value} children</span>
@@ -79,13 +108,19 @@ export default function Dashboard({ records, user, onRefresh }) {
                 <div className="w-full bg-slate-100 rounded-full h-3">
                   <div className="bg-blue-500 h-3 rounded-full" style={{ width: `${(item.value / (localStats.total || 1)) * 100}%` }}></div>
                 </div>
+                {item.children.length > 0 ? (
+                  <div className="mt-2 text-xs text-slate-600">
+                    {item.children.join(', ')}
+                  </div>
+                ) : (
+                  <div className="mt-2 text-xs text-slate-400">No child assigned yet.</div>
+                )}
               </div>
             ))}
           </div>
         </div>
 
-        {/* Age Distribution Pie Chart */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
           <div className="flex items-center gap-2 mb-6">
             <PieChart className="text-purple-600" />
             <h3 className="font-bold text-lg text-slate-700">Age Distribution</h3>

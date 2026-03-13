@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { FileText, Search, Printer, Edit, Trash2, FileBadge, Users, MessageSquare } from 'lucide-react';
+import { FileText, Search, Printer, Edit, Trash2, FileBadge, MessageSquare } from 'lucide-react';
 import FilterButton from './filterbutton';
 import SingleReportView from './SingleReportView';
 import api from '../../services/api';
@@ -228,17 +228,10 @@ export default function RecordsPortal({ records, user, onUpdate, onDelete, onRef
                     ) : (
                       <>
                         <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            {record.imageUrl ? (
-                              <img src={record.imageUrl} alt="" className="w-10 h-10 rounded-full object-cover shadow-sm" />
-                            ) : (
-                              <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-400"><Users size={20} /></div>
-                            )}
-                            <div>
-                              <div className="font-bold text-slate-800">{record.name}</div>
-                              <div className="text-sm text-slate-500">S/O {record.fatherName}</div>
-                              <div className="text-xs font-semibold bg-blue-100 text-blue-700 inline-block px-2 py-0.5 rounded mt-1">{record.age} Years</div>
-                            </div>
+                          <div>
+                            <div className="font-bold text-slate-800">{record.name}</div>
+                            <div className="text-sm text-slate-500">S/O {record.fatherName}</div>
+                            <div className="text-xs font-semibold bg-blue-100 text-blue-700 inline-block px-2 py-0.5 rounded mt-1">{record.age} Years</div>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-sm">
