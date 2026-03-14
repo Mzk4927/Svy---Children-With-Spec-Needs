@@ -1,9 +1,17 @@
-const fallbackApiUrl = 'https://svy-children-with-spec-needs-production.up.railway.app/api';
-const rawApiUrl = process.env.REACT_APP_API_URL?.trim() || fallbackApiUrl;
+// client/src/config/api.js
 
-const normalizedOrigin = rawApiUrl
-  ? rawApiUrl.replace(/\/+$/, '').replace(/\/api$/i, '')
-  : '';
+// PRO STRATEGY: 
+// 1. Agar production (Railway) par hai, toh hamesha live backend URL use karo.
+// 2. Agar local machine par hai, tabhi localhost use karo.
 
-export const API_ORIGIN = normalizedOrigin;
-export const API_BASE_URL = normalizedOrigin ? `${normalizedOrigin}/api` : '/api';
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+const LIVE_BACKEND_URL = 'https://svy-children-with-spec-needs-production.up.railway.app/api'; 
+const LOCAL_BACKEND_URL = 'http://localhost:5000/api';
+
+export const API_BASE_URL = IS_PRODUCTION ? LIVE_BACKEND_URL : LOCAL_BACKEND_URL;
+
+// Derived origin (no trailing /api) — used for building image URLs
+export const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, '');
+
+console.log("Current Environment:", process.env.NODE_ENV);
+console.log("Using API Base URL:", API_BASE_URL);
