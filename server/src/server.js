@@ -19,6 +19,10 @@ const categoryRoutes = require('./routes/categoryRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
+
+// Express ko batao ke wo Railway ke load balancer (proxy) par trust kare
+app.set('trust proxy', 1);
+
 const server = http.createServer(app);
 const io = socketIO(server, {
   cors: socketCorsOptions
