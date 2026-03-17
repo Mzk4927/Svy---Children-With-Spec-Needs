@@ -5,7 +5,7 @@ import { KPK_DISTRICTS } from '../../utils/constants';
 
 export default function NewEvaluation({ onSubmit, onCancel, user }) {
   const [formData, setFormData] = useState({
-    name: '', fatherName: '', district: '', address: '', contact: '', age: '', disability: '', advice: '', remarks: '', image: null, imageUrl: null
+    name: '', fatherName: '', district: '', address: '', contact: '', age: '', disability: '', advice: '', remarks: '', image: null, imageUrl: null, imagePublicId: null
   });
   const [uploading, setUploading] = useState(false);
   const [categories, setCategories] = useState([]);
@@ -66,7 +66,12 @@ export default function NewEvaluation({ onSubmit, onCancel, user }) {
     try {
       const result = await api.uploadImage(file);
       const previewUrl = URL.createObjectURL(file);
-      setFormData({ ...formData, image: previewUrl, imageUrl: result.imageUrl });
+      setFormData({
+        ...formData,
+        image: previewUrl,
+        imageUrl: result.imageUrl,
+        imagePublicId: result.imagePublicId || null
+      });
     } catch (error) {
       alert('Upload failed: ' + error.message);
     } finally {
@@ -81,6 +86,7 @@ export default function NewEvaluation({ onSubmit, onCancel, user }) {
       name: formData.name, fatherName: formData.fatherName, district: formData.district, address: formData.address,
       contact: formData.contact, age: parseInt(formData.age), disability: formData.disability,
       advice: formData.advice, remarks: formData.remarks, imageUrl: formData.imageUrl,
+      imagePublicId: formData.imagePublicId,
       tags: selectedCategories
     });
   };
@@ -173,7 +179,7 @@ export default function NewEvaluation({ onSubmit, onCancel, user }) {
                   <img src={formData.image} alt="Preview" className="w-full h-full object-cover rounded-lg" />
                   <button
                     type="button"
-                    onClick={() => setFormData({ ...formData, image: null, imageUrl: null })}
+                    onClick={() => setFormData({ ...formData, image: null, imageUrl: null, imagePublicId: null })}
                     className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
                   >
                     <X size={16} />

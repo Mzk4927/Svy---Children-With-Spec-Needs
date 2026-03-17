@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { FileBadge, Activity, Users, Printer, X } from 'lucide-react';
 import { API_ORIGIN } from '../../config/api';
 
@@ -10,7 +10,12 @@ const getImageSrc = (imageUrl) => {
 };
 
 export default function SingleReportView({ record, onClose }) {
-  const imageSrc = getImageSrc(record.imageUrl);
+  const initialImageSrc = useMemo(() => getImageSrc(record.imageUrl), [record.imageUrl]);
+  const [imageSrc, setImageSrc] = useState(initialImageSrc);
+
+  React.useEffect(() => {
+    setImageSrc(initialImageSrc);
+  }, [initialImageSrc]);
 
   return (
     <div className="fixed inset-0 z-50 bg-white overflow-y-auto">
@@ -43,7 +48,12 @@ export default function SingleReportView({ record, onClose }) {
           </div>
           <div className="w-48 h-48 flex-shrink-0 mx-auto md:mx-0 border-4 border-slate-200 shadow-sm bg-slate-100 flex items-center justify-center overflow-hidden rounded-lg">
             {imageSrc ? (
-              <img src={imageSrc} alt="Patient" className="w-full h-full object-cover" />
+              <img
+                src={imageSrc}
+                alt="Patient"
+                className="w-full h-full object-cover"
+                onError={() => setImageSrc(null)}
+              />
             ) : (
               <div className="text-slate-300 flex flex-col items-center"><Users size={48} /><span className="text-xs uppercase mt-2 font-bold">No Photo</span></div>
             )}
