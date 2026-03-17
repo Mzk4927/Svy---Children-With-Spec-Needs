@@ -4,16 +4,53 @@ import StatCard from './StatCard';
 import DistrictProfilingWidget from './DistrictProfilingWidget';
 import { getDistrictDistribution } from '../../utils/helpers';
 
-const REQUEST_CATEGORIES = ['Imed Asst Req', 'Medicine Referral', 'Physio Referral'];
-const TOOL_CATEGORIES = [
-  'Wheelchair',
-  'Crutches',
-  'Walker (Walking Frame)',
-  'Walking Cane',
-  'Prosthetic Leg (Artificial Leg)',
-  'Prosthetic Arm (Artificial Arm)',
-  'Hearing Aid'
+const TOOL_ALIAS_MAP = {
+  wheelchair: 'Wheelchair',
+  'wheel chair': 'Wheelchair',
+  crutch: 'Crutches',
+  crutches: 'Crutches',
+  walker: 'Walker',
+  'walking frame': 'Walker',
+  cane: 'Walking Cane',
+  'walking cane': 'Walking Cane',
+  'hearing aid': 'Hearing Aid',
+  'hearing aids': 'Hearing Aid',
+  'prosthetic leg': 'Prosthetic Leg',
+  'artificial leg': 'Prosthetic Leg',
+  'prosthetic arm': 'Prosthetic Arm',
+  'artificial arm': 'Prosthetic Arm',
+  'toilet chair': 'Toilet Chair',
+  'cp chair': 'CP Chair',
+  stroller: 'Stroller',
+  afo: 'AFO',
+  'gait trainer': 'Gait Trainer',
+  'standing frame': 'Standing Frame',
+  'corner seat': 'Corner Seat',
+  'electric scooter': 'Electric Scooter'
+};
+
+const REQUEST_DEFINITIONS = [
+  {
+    name: 'Imed Asst Req',
+    keywords: ['imed asst req', 'immediate assist', 'assistive request', 'assistance', 'assistence']
+  },
+  {
+    name: 'Medicine Referral',
+    keywords: ['medicine referral', 'medicine', 'medication', 'drug', 'pharmacy']
+  },
+  {
+    name: 'Physio Referral',
+    keywords: ['physio referral', 'physio', 'physiotherapy', 'therapy', 'rehab']
+  }
 ];
+
+const normalizeText = (value = '') => value
+  .toLowerCase()
+  .replace(/[^a-z0-9\s]/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim();
+
+const normalizeTagLabel = (tag = '') => tag.replace(/[.,]+$/g, '').trim();
 
 export default function Dashboard({ records, onRefresh }) {
   const localStats = useMemo(() => {
@@ -29,13 +66,21 @@ export default function Dashboard({ records, onRefresh }) {
   }, [records]);
 
   const requestDistribution = useMemo(() => {
-    return REQUEST_CATEGORIES.map((categoryName) => {
+    return REQUEST_DEFINITIONS.map((definition) => {
       const children = records
-        .filter((record) => (record.tags || []).includes(categoryName))
+        .filter((record) => {
+          const searchable = [
+            ...(record.tags || []),
+            record.advice || '',
+            record.remarks || ''
+          ].map(normalizeText).join(' ');
+
+          return definition.keywords.some((keyword) => searchable.includes(keyword));
+        })
         .map((record) => record.name);
 
       return {
-        name: categoryName,
+        name: definition.name,
         children,
         value: children.length
       };
@@ -43,14 +88,36 @@ export default function Dashboard({ records, onRefresh }) {
   }, [records]);
 
   const toolDistribution = useMemo(() => {
-    return TOOL_CATEGORIES.map((toolName) => {
-      const assignedChildren = records.filter((record) => (record.tags || []).includes(toolName));
-      return {
-        name: toolName,
-        value: assignedChildren.length,
-        children: assignedChildren.map((record) => record.name)
-      };
-    }).filter((tool) => tool.value > 0);
+    const toolsMap = records.reduce((acc, record) => {
+      const recordName = record.name;
+
+      (record.tags || []).forEach((rawTag) => {
+        const cleanedLabel = normalizeTagLabel(rawTag);
+        const normalizedTag = normalizeText(cleanedLabel);
+        const canonicalTool = TOOL_ALIAS_MAP[normalizedTag] || cleanedLabel;
+
+        if (!canonicalTool) return;
+
+        if (!acc[canonicalTool]) {
+          acc[canonicalTool] = { name: canonicalTool, childrenSet: new Set() };
+        }
+
+        if (recordName) {
+          acc[canonicalTool].childrenSet.add(recordName);
+        }
+      });
+
+      return acc;
+    }, {});
+
+    return Object.values(toolsMap)
+      .map((entry) => ({
+        name: entry.name,
+        children: Array.from(entry.childrenSet),
+        value: entry.childrenSet.size
+      }))
+      .filter((tool) => tool.value > 0)
+      .sort((a, b) => b.value - a.value || a.name.localeCompare(b.name));
   }, [records]);
 
   const districtDistribution = useMemo(() => getDistrictDistribution(records), [records]);

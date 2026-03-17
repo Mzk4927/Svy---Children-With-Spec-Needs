@@ -128,7 +128,7 @@ export function RecordsProvider({ children }) {
     createRecord,
     updateRecord,
     deleteRecord
-  }), [records, loading, error, refreshRecords, clearRecords]);
+  }), [records, loading, error, refreshRecords, clearRecords, createRecord, updateRecord, deleteRecord]);
 
   return <RecordsContext.Provider value={value}>{children}</RecordsContext.Provider>;
 }
