@@ -1,8 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Users, BarChart2, PieChart, Wrench, Clock, CheckCircle } from 'lucide-react';
 import StatCard from './StatCard';
 import DistrictProfilingWidget from './DistrictProfilingWidget';
 import { getDistrictDistribution } from '../../utils/helpers';
+import api from '../../services/api';
 
 const TOOL_ALIAS_MAP = {
   wheelchair: 'Wheelchair',
@@ -53,6 +54,29 @@ const normalizeText = (value = '') => value
 const normalizeTagLabel = (tag = '') => tag.replace(/[.,]+$/g, '').trim();
 
 export default function Dashboard({ records, onRefresh }) {
+  const [dashboardStats, setDashboardStats] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadStats = async () => {
+      try {
+        const stats = await api.getStatistics();
+        if (!mounted) return;
+        setDashboardStats(stats?.dashboard || null);
+      } catch {
+        if (!mounted) return;
+        setDashboardStats(null);
+      }
+    };
+
+    loadStats();
+
+    return () => {
+      mounted = false;
+    };
+  }, [records.length]);
+
   const localStats = useMemo(() => {
     return {
       total: records.length,
@@ -127,6 +151,13 @@ export default function Dashboard({ records, onRefresh }) {
     completed: records.filter(r => (r.treatmentStatus || '').toLowerCase() === 'completed').length
   }), [records]);
 
+  const displayStats = useMemo(() => ({
+    total: dashboardStats?.totalActive ?? localStats.total,
+    ageGroups: dashboardStats?.ageGroups ?? localStats.ageGroups,
+    pending: dashboardStats?.totalPending ?? treatmentStats.pending,
+    completed: dashboardStats?.totalCompleted ?? treatmentStats.completed
+  }), [dashboardStats, localStats, treatmentStats]);
+
   return (
     <div className="space-y-7">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -138,12 +169,12 @@ export default function Dashboard({ records, onRefresh }) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5">
-        <StatCard title="Total Children" value={localStats.total || 0} icon={<Users className="text-blue-600" />} color="bg-blue-50" />
-        <StatCard title="Ages 0-5" value={localStats.ageGroups?.['0-5'] || 0} icon={<Users className="text-emerald-600" />} color="bg-emerald-50" />
-        <StatCard title="Ages 6-15" value={(localStats.ageGroups?.['6-10'] || 0) + (localStats.ageGroups?.['11-15'] || 0)} icon={<Users className="text-amber-600" />} color="bg-amber-50" />
-        <StatCard title="Ages 15+" value={localStats.ageGroups?.['15+'] || 0} icon={<Users className="text-purple-600" />} color="bg-purple-50" />
-        <StatCard title="Treatment Pending" value={treatmentStats.pending} icon={<Clock className="text-amber-600" />} color="bg-amber-50" />
-        <StatCard title="Treatment Done" value={treatmentStats.completed} icon={<CheckCircle className="text-emerald-600" />} color="bg-emerald-50" />
+        <StatCard title="Total Children" value={displayStats.total || 0} icon={<Users className="text-blue-600" />} color="bg-blue-50" />
+        <StatCard title="Ages 0-5" value={displayStats.ageGroups?.['0-5'] || 0} icon={<Users className="text-emerald-600" />} color="bg-emerald-50" />
+        <StatCard title="Ages 6-15" value={(displayStats.ageGroups?.['6-10'] || 0) + (displayStats.ageGroups?.['11-15'] || 0)} icon={<Users className="text-amber-600" />} color="bg-amber-50" />
+        <StatCard title="Ages 15+" value={displayStats.ageGroups?.['15+'] || 0} icon={<Users className="text-purple-600" />} color="bg-purple-50" />
+        <StatCard title="Treatment Pending" value={displayStats.pending} icon={<Clock className="text-amber-600" />} color="bg-amber-50" />
+        <StatCard title="Treatment Done" value={displayStats.completed} icon={<CheckCircle className="text-emerald-600" />} color="bg-emerald-50" />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
