@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Users, BarChart2, PieChart, Wrench, Clock, CheckCircle } from 'lucide-react';
 import StatCard from './StatCard';
 import DistrictProfilingWidget from './DistrictProfilingWidget';
-import { getDistrictDistribution } from '../../utils/helpers';
 import api from '../../services/api';
 
 const TOOL_ALIAS_MAP = {
@@ -55,6 +54,7 @@ const normalizeTagLabel = (tag = '') => tag.replace(/[.,]+$/g, '').trim();
 
 export default function Dashboard({ records, onRefresh }) {
   const [dashboardStats, setDashboardStats] = useState(null);
+  const [areaDistribution, setAreaDistribution] = useState([]);
 
   useEffect(() => {
     let mounted = true;
@@ -64,9 +64,11 @@ export default function Dashboard({ records, onRefresh }) {
         const stats = await api.getStatistics();
         if (!mounted) return;
         setDashboardStats(stats?.dashboard || null);
+        setAreaDistribution(Array.isArray(stats?.areaDistribution) ? stats.areaDistribution : []);
       } catch {
         if (!mounted) return;
         setDashboardStats(null);
+        setAreaDistribution([]);
       }
     };
 
@@ -144,8 +146,6 @@ export default function Dashboard({ records, onRefresh }) {
       .sort((a, b) => b.value - a.value || a.name.localeCompare(b.name));
   }, [records]);
 
-  const districtDistribution = useMemo(() => getDistrictDistribution(records), [records]);
-
   const treatmentStats = useMemo(() => ({
     pending: records.filter(r => (r.treatmentStatus || 'Pending').toLowerCase() !== 'completed').length,
     completed: records.filter(r => (r.treatmentStatus || '').toLowerCase() === 'completed').length
@@ -202,7 +202,7 @@ export default function Dashboard({ records, onRefresh }) {
           </div>
         </div>
 
-        <DistrictProfilingWidget districtData={districtDistribution} totalRecords={localStats.total} />
+        <DistrictProfilingWidget districtData={areaDistribution} totalRecords={displayStats.total} />
 
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
           <div className="flex items-center gap-2 mb-6">

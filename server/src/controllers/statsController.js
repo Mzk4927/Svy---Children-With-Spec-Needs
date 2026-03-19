@@ -13,7 +13,8 @@ const getStatistics = async (req, res, next) => {
 			archivedRecords,
 			groupedDisabilities,
 			ageGroups,
-			treatmentStatusBreakdown
+			treatmentStatusBreakdown,
+			areaDistribution
 		] = await Promise.all([
 			prisma.record.count({ where }),
 			prisma.record.count({ where: activeWhere }),
@@ -35,6 +36,12 @@ const getStatistics = async (req, res, next) => {
 				by: ['treatmentStatus'],
 				where: activeWhere,
 				_count: { treatmentStatus: true }
+			}),
+			prisma.record.groupBy({
+				by: ['district'],
+				where: activeWhere,
+				_count: { district: true },
+				orderBy: { _count: { district: 'desc' } }
 			})
 		]);
 
@@ -72,6 +79,10 @@ const getStatistics = async (req, res, next) => {
 			totalRecords,
 			activeRecords,
 			archivedRecords,
+			areaDistribution: areaDistribution.map((row) => ({
+				district: row.district || 'Unknown',
+				count: row._count.district
+			})),
 			dashboard: {
 				totalActive: activeRecords,
 				ageGroups: {
