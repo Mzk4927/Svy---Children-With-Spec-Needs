@@ -122,14 +122,15 @@ app.get('/health', (req, res) => {
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
+const HOST = '0.0.0.0';
 
 const startServer = async () => {
   try {
     await prisma.initDatabase();
     console.log('✅ Connected to PostgreSQL');
 
-    server.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
+    server.listen(PORT, HOST, () => {
+      console.log(`🚀 Server running on ${HOST}:${PORT}`);
     });
   } catch (err) {
     console.error('❌ PostgreSQL connection error:', err);
