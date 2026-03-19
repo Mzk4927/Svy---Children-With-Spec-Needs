@@ -75,7 +75,7 @@ export function RecordsProvider({ children }) {
     const requestedPage = Number(options.page || currentPage);
     const requestedLimit = Number(options.limit || pageSize);
     const requestedSearch = String(options.search ?? searchQuery).trim();
-    const requestedAgeGroup = String(options.ageGroup ?? selectedAgeGroup || DEFAULT_AGE_GROUP);
+    const requestedAgeGroup = String(options.ageGroup ?? (selectedAgeGroup || DEFAULT_AGE_GROUP));
 
     setLoading(true);
     setError('');
@@ -120,7 +120,7 @@ export function RecordsProvider({ children }) {
 
   const applyFilters = useCallback(async ({ search, ageGroup } = {}) => {
     const nextSearch = String(search ?? searchQuery).trim();
-    const nextAgeGroup = String(ageGroup ?? selectedAgeGroup || DEFAULT_AGE_GROUP);
+    const nextAgeGroup = String(ageGroup ?? (selectedAgeGroup || DEFAULT_AGE_GROUP));
     return refreshRecords({
       page: 1,
       limit: pageSize,
