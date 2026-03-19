@@ -2,8 +2,37 @@ const prisma = require('../config/database');
 
 exports.getAll = async (req, res, next) => {
   try {
-    const { page = 1, limit = 100 } = req.query;
-    const where = { organizationId: req.user.organizationId, status: 'active' };
+    const { page = 1, limit = 100, search = '', ageGroup = 'all' } = req.query;
+    const normalizedSearch = String(search).trim();
+    const normalizedAgeGroup = String(ageGroup).trim().toLowerCase();
+    const where = {
+      organizationId: req.user.organizationId,
+      status: 'active'
+    };
+
+    if (normalizedSearch) {
+      where.OR = [
+        { name: { contains: normalizedSearch, mode: 'insensitive' } },
+        { fatherName: { contains: normalizedSearch, mode: 'insensitive' } },
+        { district: { contains: normalizedSearch, mode: 'insensitive' } },
+        { disability: { contains: normalizedSearch, mode: 'insensitive' } },
+        { advice: { contains: normalizedSearch, mode: 'insensitive' } },
+        { remarks: { contains: normalizedSearch, mode: 'insensitive' } },
+        { address: { contains: normalizedSearch, mode: 'insensitive' } },
+        { contact: { contains: normalizedSearch, mode: 'insensitive' } }
+      ];
+    }
+
+    if (normalizedAgeGroup === '0-5') {
+      where.age = { gte: 0, lte: 5 };
+    } else if (normalizedAgeGroup === '6-10') {
+      where.age = { gt: 5, lte: 10 };
+    } else if (normalizedAgeGroup === '11-15') {
+      where.age = { gt: 10, lte: 15 };
+    } else if (normalizedAgeGroup === '15+') {
+      where.age = { gt: 15 };
+    }
+
     const pageNumber = parseInt(page, 10);
     const pageSize = parseInt(limit, 10);
 
@@ -24,7 +53,20 @@ exports.getAll = async (req, res, next) => {
     });
 
     const total = await prisma.record.count({ where });
-    res.json({ data: records, total, page: pageNumber, limit: pageSize });
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+    res.json({
+      records,
+      totalCount: total,
+      page: pageNumber,
+      limit: pageSize,
+      totalPages,
+      search: normalizedSearch,
+      ageGroup: normalizedAgeGroup,
+      // Backward compatibility for existing consumers
+      data: records,
+      total
+    });
   } catch (err) {
     next(err);
   }

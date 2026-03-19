@@ -1,12 +1,25 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { FileText, Search, Printer, Edit, Trash2, FileBadge, MessageSquare, Check, RotateCcw } from 'lucide-react';
 import FilterButton from './filterbutton';
 import SingleReportView from './SingleReportView';
 import api from '../../services/api';
 
-export default function RecordsPortal({ records, user, onUpdate, onDelete, onRefresh }) {
-  const [ageFilter, setAgeFilter] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
+export default function RecordsPortal({
+  records,
+  totalCount,
+  currentPage,
+  totalPages,
+  searchQuery,
+  selectedAgeGroup,
+  user,
+  onUpdate,
+  onDelete,
+  onRefresh,
+  onPageChange,
+  onApplyFilters
+}) {
+  const [ageFilter, setAgeFilter] = useState(selectedAgeGroup || 'all');
+  const [searchTerm, setSearchTerm] = useState(searchQuery || '');
   const [editingId, setEditingId] = useState(null);
   const [singleReport, setSingleReport] = useState(null);
   const [reviewModalRecord, setReviewModalRecord] = useState(null);
@@ -21,18 +34,21 @@ export default function RecordsPortal({ records, user, onUpdate, onDelete, onRef
   const [newCategoryName, setNewCategoryName] = useState('');
   const [categoryError, setCategoryError] = useState('');
 
-  const filteredRecords = useMemo(() => {
-    return records.filter(r => {
-      const searchMatch = r.name?.toLowerCase().includes(searchTerm.toLowerCase()) || r.fatherName?.toLowerCase().includes(searchTerm.toLowerCase());
-      if (!searchMatch) return false;
-      if (ageFilter === 'all') return true;
-      if (ageFilter === '0-5') return r.age >= 0 && r.age <= 5;
-      if (ageFilter === '6-10') return r.age > 5 && r.age <= 10;
-      if (ageFilter === '11-15') return r.age > 10 && r.age <= 15;
-      if (ageFilter === '15+') return r.age > 15;
-      return true;
-    });
-  }, [records, ageFilter, searchTerm]);
+  useEffect(() => {
+    setSearchTerm(searchQuery || '');
+  }, [searchQuery]);
+
+  useEffect(() => {
+    setAgeFilter(selectedAgeGroup || 'all');
+  }, [selectedAgeGroup]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onApplyFilters?.({ search: searchTerm, ageGroup: ageFilter });
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [ageFilter, onApplyFilters, searchTerm]);
 
   const categoryMap = useMemo(() => {
     const map = {};
@@ -184,7 +200,7 @@ export default function RecordsPortal({ records, user, onUpdate, onDelete, onRef
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
           <FileText className="text-blue-600" />
-          Patient Records ({filteredRecords.length})
+          Patient Records ({totalCount ?? records.length})
         </h2>
         <div className="flex gap-3">
           <button onClick={onRefresh} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
@@ -211,7 +227,7 @@ export default function RecordsPortal({ records, user, onUpdate, onDelete, onRef
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        {filteredRecords.length === 0 ? (
+        {records.length === 0 ? (
           <div className="p-8 text-center text-slate-500">No records found.</div>
         ) : (
           <div className="overflow-x-auto">
@@ -227,7 +243,7 @@ export default function RecordsPortal({ records, user, onUpdate, onDelete, onRef
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredRecords.map(record => (
+                {records.map(record => (
                   <tr key={record._id || record.id} className="hover:bg-slate-50 transition">
                     {editingId === (record._id || record.id) ? (
                       <td colSpan={6} className="p-4 bg-blue-50">
@@ -307,6 +323,28 @@ export default function RecordsPortal({ records, user, onUpdate, onDelete, onRef
             </table>
           </div>
         )}
+      </div>
+
+      <div className="mt-4 flex items-center justify-between">
+        <span className="text-sm text-slate-500">Page {currentPage || 1} of {totalPages || 1}</span>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => onPageChange?.((currentPage || 1) - 1)}
+            disabled={!currentPage || currentPage <= 1}
+            className="px-3 py-1.5 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <button
+            type="button"
+            onClick={() => onPageChange?.((currentPage || 1) + 1)}
+            disabled={!totalPages || !currentPage || currentPage >= totalPages}
+            className="px-3 py-1.5 border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
       </div>
 
       <div className="mt-6 bg-white rounded-xl shadow-sm border border-slate-200 p-5">

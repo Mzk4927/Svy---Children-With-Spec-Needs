@@ -15,17 +15,24 @@ export default function App() {
   const [error, setError] = useState(null);
   const {
     records,
+    totalCount,
+    currentPage,
+    totalPages,
+    searchQuery,
+    selectedAgeGroup,
     loading,
     refreshRecords,
+    goToPage,
+    applyFilters,
     clearRecords,
     createRecord,
     updateRecord,
     deleteRecord
   } = useRecords();
 
-  const fetchRecords = useCallback(async () => {
+  const fetchRecords = useCallback(async (options = {}) => {
     try {
-      await refreshRecords();
+      await refreshRecords(options);
     } catch (err) {
       setError(err.message);
     }
@@ -103,10 +110,17 @@ export default function App() {
             {activeTab === 'records' && (
               <RecordsPortal
                 records={records}
+                totalCount={totalCount}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                searchQuery={searchQuery}
+                selectedAgeGroup={selectedAgeGroup}
                 user={user}
                 onUpdate={handleUpdateRecord}
                 onDelete={handleDeleteRecord}
                 onRefresh={fetchRecords}
+                onPageChange={goToPage}
+                onApplyFilters={applyFilters}
               />
             )}
           </main>
