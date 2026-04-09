@@ -1,5 +1,40 @@
 const prisma = require('../config/database');
 
+const TOOL_ALIAS_MAP = {
+	wheelchair: 'Wheelchair',
+	'wheel chair': 'Wheelchair',
+	crutch: 'Crutches',
+	crutches: 'Crutches',
+	walker: 'Walker',
+	'walking frame': 'Walker',
+	cane: 'Walking Cane',
+	'walking cane': 'Walking Cane',
+	'hearing aid': 'Hearing Aid',
+	'hearing aids': 'Hearing Aid',
+	'prosthetic leg': 'Prosthetic Leg',
+	'artificial leg': 'Prosthetic Leg',
+	'prosthetic arm': 'Prosthetic Arm',
+	'artificial arm': 'Prosthetic Arm',
+	'toilet chair': 'Toilet Chair',
+	'cp chair': 'CP Chair',
+	stroller: 'Stroller',
+	afo: 'AFO',
+	'gait trainer': 'Gait Trainer',
+	'standing frame': 'Standing Frame',
+	'corner seat': 'Corner Seat',
+	'electric scooter': 'Electric Scooter',
+	shoes: 'Shoes',
+	clothes: 'Clothes'
+};
+
+const normalizeText = (value = '') => String(value)
+	.toLowerCase()
+	.replace(/[^a-z0-9\s]/g, ' ')
+	.replace(/\s+/g, ' ')
+	.trim();
+
+const normalizeTagLabel = (tag = '') => String(tag).replace(/[.,]+$/g, '').trim();
+
 const getStatistics = async (req, res, next) => {
 	try {
 		const where = req.user?.organizationId
@@ -45,6 +80,37 @@ const getStatistics = async (req, res, next) => {
 			})
 		]);
 
+		const rawToolDistribution = req.user?.organizationId
+			? await prisma.$queryRaw`
+				SELECT TRIM(tag) AS tag, COUNT(*)::int AS count
+				FROM "Record", UNNEST("tags") AS tag
+				WHERE "organizationId" = ${req.user.organizationId} AND "status" = 'active'
+				GROUP BY TRIM(tag)
+				ORDER BY count DESC
+			`
+			: await prisma.$queryRaw`
+				SELECT TRIM(tag) AS tag, COUNT(*)::int AS count
+				FROM "Record", UNNEST("tags") AS tag
+				WHERE "status" = 'active'
+				GROUP BY TRIM(tag)
+				ORDER BY count DESC
+			`;
+
+		const toolCounts = rawToolDistribution.reduce((acc, row) => {
+			const cleanedLabel = normalizeTagLabel(row.tag || '');
+			const normalizedTag = normalizeText(cleanedLabel);
+			const canonicalTool = TOOL_ALIAS_MAP[normalizedTag] || cleanedLabel;
+
+			if (!canonicalTool) return acc;
+
+			acc[canonicalTool] = (acc[canonicalTool] || 0) + Number(row.count || 0);
+			return acc;
+		}, {});
+
+		const toolDistribution = Object.entries(toolCounts)
+			.map(([name, count]) => ({ name, value: count }))
+			.sort((a, b) => b.value - a.value || a.name.localeCompare(b.name));
+
 		const monthlyTrend = req.user?.organizationId
 			? await prisma.$queryRaw`
 				SELECT EXTRACT(YEAR FROM "createdAt")::int AS year,
@@ -79,6 +145,7 @@ const getStatistics = async (req, res, next) => {
 			totalRecords,
 			activeRecords,
 			archivedRecords,
+			toolDistribution,
 			areaDistribution: areaDistribution.map((row) => ({
 				district: row.district || 'Unknown',
 				count: row._count.district

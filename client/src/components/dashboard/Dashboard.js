@@ -4,31 +4,6 @@ import StatCard from './StatCard';
 import DistrictProfilingWidget from './DistrictProfilingWidget';
 import api from '../../services/api';
 
-const TOOL_ALIAS_MAP = {
-  wheelchair: 'Wheelchair',
-  'wheel chair': 'Wheelchair',
-  crutch: 'Crutches',
-  crutches: 'Crutches',
-  walker: 'Walker',
-  'walking frame': 'Walker',
-  cane: 'Walking Cane',
-  'walking cane': 'Walking Cane',
-  'hearing aid': 'Hearing Aid',
-  'hearing aids': 'Hearing Aid',
-  'prosthetic leg': 'Prosthetic Leg',
-  'artificial leg': 'Prosthetic Leg',
-  'prosthetic arm': 'Prosthetic Arm',
-  'artificial arm': 'Prosthetic Arm',
-  'toilet chair': 'Toilet Chair',
-  'cp chair': 'CP Chair',
-  stroller: 'Stroller',
-  afo: 'AFO',
-  'gait trainer': 'Gait Trainer',
-  'standing frame': 'Standing Frame',
-  'corner seat': 'Corner Seat',
-  'electric scooter': 'Electric Scooter'
-};
-
 const REQUEST_DEFINITIONS = [
   {
     name: 'Imed Asst Req',
@@ -50,11 +25,10 @@ const normalizeText = (value = '') => value
   .replace(/\s+/g, ' ')
   .trim();
 
-const normalizeTagLabel = (tag = '') => tag.replace(/[.,]+$/g, '').trim();
-
 export default function Dashboard({ records, onRefresh }) {
   const [dashboardStats, setDashboardStats] = useState(null);
   const [areaDistribution, setAreaDistribution] = useState([]);
+  const [toolDistribution, setToolDistribution] = useState([]);
 
   useEffect(() => {
     let mounted = true;
@@ -65,10 +39,12 @@ export default function Dashboard({ records, onRefresh }) {
         if (!mounted) return;
         setDashboardStats(stats?.dashboard || null);
         setAreaDistribution(Array.isArray(stats?.areaDistribution) ? stats.areaDistribution : []);
+        setToolDistribution(Array.isArray(stats?.toolDistribution) ? stats.toolDistribution : []);
       } catch {
         if (!mounted) return;
         setDashboardStats(null);
         setAreaDistribution([]);
+        setToolDistribution([]);
       }
     };
 
@@ -111,39 +87,6 @@ export default function Dashboard({ records, onRefresh }) {
         value: children.length
       };
     });
-  }, [records]);
-
-  const toolDistribution = useMemo(() => {
-    const toolsMap = records.reduce((acc, record) => {
-      const recordName = record.name;
-
-      (record.tags || []).forEach((rawTag) => {
-        const cleanedLabel = normalizeTagLabel(rawTag);
-        const normalizedTag = normalizeText(cleanedLabel);
-        const canonicalTool = TOOL_ALIAS_MAP[normalizedTag] || cleanedLabel;
-
-        if (!canonicalTool) return;
-
-        if (!acc[canonicalTool]) {
-          acc[canonicalTool] = { name: canonicalTool, childrenSet: new Set() };
-        }
-
-        if (recordName) {
-          acc[canonicalTool].childrenSet.add(recordName);
-        }
-      });
-
-      return acc;
-    }, {});
-
-    return Object.values(toolsMap)
-      .map((entry) => ({
-        name: entry.name,
-        children: Array.from(entry.childrenSet),
-        value: entry.childrenSet.size
-      }))
-      .filter((tool) => tool.value > 0)
-      .sort((a, b) => b.value - a.value || a.name.localeCompare(b.name));
   }, [records]);
 
   const treatmentStats = useMemo(() => ({
@@ -194,7 +137,7 @@ export default function Dashboard({ records, onRefresh }) {
                     <span className="text-slate-500">{item.value} children</span>
                   </div>
                   <div className="w-full bg-slate-200 rounded-full h-2.5">
-                    <div className="bg-indigo-500 h-2.5 rounded-full" style={{ width: `${(item.value / (localStats.total || 1)) * 100}%` }}></div>
+                    <div className="bg-indigo-500 h-2.5 rounded-full" style={{ width: `${(item.value / (displayStats.total || 1)) * 100}%` }}></div>
                   </div>
                 </div>
               ))
